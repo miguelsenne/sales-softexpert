@@ -1,0 +1,49 @@
+FROM devilbox/php-fpm-8.3
+
+ENV USER=www
+ENV GROUP=www
+
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    libbz2-dev \
+    libcurl4-openssl-dev \
+    pkg-config \
+    libenchant-2-dev \
+    zip \
+    libgmp3-dev \
+    unzip \
+    libsodium-dev \
+    libcurl4-openssl-dev \
+    libssl-dev \
+    postgresql-client \
+    libpq-dev
+
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN docker-php-ext-install pdo_pgsql && \
+    docker-php-ext-install mbstring && \
+    docker-php-ext-install exif && \
+    docker-php-ext-install pcntl && \
+    docker-php-ext-install bcmath && \
+    docker-php-ext-install gd && \
+    docker-php-ext-install sodium
+
+COPY --from=composer:2.2 /usr/bin/composer /usr/local/bin/composer
+
+WORKDIR /var/www/
+
+RUN groupadd -g 1000 ${GROUP} && useradd -u 1000 -ms /bin/bash -g ${GROUP} ${USER}
+
+RUN chown -R ${USER} /var/www
+
+USER ${USER}
+
+COPY --chown=${USER}:${GROUP} . .
+
+EXPOSE 80
+
+CMD ["php-fpm"]
